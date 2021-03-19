@@ -19,6 +19,7 @@ torch.manual_seed(args.seed)
 def train():
     # 加载预训练bert
     model = BertForQuestionAnswering.from_pretrained(r"D:\self\Graduation\data\bert")
+    model.load_state_dict(torch.load(r"D:\self\Graduation\MRC\model_dir\best_model_0.18496017780824392"))
     device = args.device
     model.to(device)
 
@@ -36,14 +37,15 @@ def train():
     source_data_path = r"data/train.json"
     train_dataset = DataFormat(source_data_path)
     train_size = int(0.9 * len(train_dataset))
+    print("Train size:", train_size)
     dev_size = len(train_dataset) - train_size
     train_dataset, dev_dataset = torch.utils.data.random_split(
         train_dataset, [train_size, dev_size])
     train_loader = DataLoader(
-        train_dataset, shuffle=True, batch_size=32, num_workers=4)
+        train_dataset, shuffle=True, batch_size=4, num_workers=4)
     # dev data build
     dev_loader = DataLoader(
-        dev_dataset, shuffle=False, batch_size=16, num_workers=2)
+        dev_dataset, shuffle=False, batch_size=2, num_workers=2)
     best_loss = 100000.0
     model.train()
     for i in range(args.num_train_epochs):
@@ -55,7 +57,7 @@ def train():
             # 计算loss
             loss, _, _ = model(input_ids, token_type_ids=segment_ids, attention_mask=input_mask, start_positions=start_positions, end_positions=end_positions)
             loss = loss / args.gradient_accumulation_steps
-            print("Steps:", step, "Loss",loss.data)
+            print("Steps:", step, "Loss",loss.item())
             loss.backward()
 
             # 更新梯度
@@ -67,7 +69,8 @@ def train():
         eval_loss = evaluate.evaluate(model, dev_loader)
         if eval_loss < best_loss:
             best_loss = eval_loss
-            torch.save(model.state_dict(), './model_dir/' + "best_model")
+            print("Best loss:********** ",best_loss)
+            torch.save(model.state_dict(), './model_dir/' +"best_model_"+ str(best_loss))
             model.train()
 
 if __name__ == "__main__":

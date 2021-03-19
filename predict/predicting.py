@@ -52,7 +52,9 @@ def evaluate(model, eval_path, result_file):
 
             best_span, docs_index = find_best_answer(start_prob, end_prob)
             para = "p" + example['question_text'] + "。" + example['doc_tokens']
-            best_answer = ''.join(para[best_span[0]: best_span[1]+1])
+            best_answer = ''.join(para[best_span[0]: best_span[1]])
+            print("Q:",question_text,"==", "A:", best_answer,"==", "PARA:", para)
+
             pred_answers.append({'question_id': example['id'],
                                  'question':example['question_text'],
                                  'question_type': example['question_type'],
@@ -68,19 +70,19 @@ def evaluate(model, eval_path, result_file):
         with open(result_file, 'w', encoding='utf-8') as fout:
             for pred_answer in pred_answers:
                 fout.write(json.dumps(pred_answer, ensure_ascii=False) + '\n')
-        with open("../metric/ref.json", 'w', encoding='utf-8') as fout:
+        with open("ref.json", 'w', encoding='utf-8') as fout:
             for pred_answer in ref_answers:
                 fout.write(json.dumps(pred_answer, ensure_ascii=False) + '\n')
 
 def eval_all(eval_path):
    
-    output_model_file = "../model_dir/best_model"
+    output_model_file = "../model_dir/best_model_0.06195534260291743"
     output_config_file = "../model_dir/bert_config.json"  
     
     config = BertConfig(output_config_file)
     model = BertForQuestionAnswering(config)
     model.load_state_dict(torch.load(output_model_file)) #, map_location='cpu'))
-    evaluate(model.cpu(),eval_path, result_file="predicts.json")
+    evaluate(model.cpu(), eval_path, result_file="predicts.json")
 
 eval_path = r"D:\self\Graduation\MRC\data\dev.json"
 eval_all(eval_path)
